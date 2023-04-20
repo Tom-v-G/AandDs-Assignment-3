@@ -60,8 +60,7 @@ class DroneExtinguisher:
           float: the Euclidean distance between the two points
         """
         
-        # TODO
-        raise NotImplementedError()
+        return np.sqrt( np.power(point1[0] - point2[0], 2) + np.power(point1[1] - point2[1], 2))
 
 
     def fill_travel_costs_in_liters(self):
@@ -73,9 +72,9 @@ class DroneExtinguisher:
                 
         The function does not return anything.  
         """
-        
-        # TODO
-        raise NotImplementedError()
+        for index in range(self.num_bags):
+            distance = self.compute_euclidean_distance(self.bag_locations[index], self.forest_location)
+            self.travel_costs_in_liters.append(np.ceil(2 * distance * self.liter_cost_per_km))
 
 
     def compute_sequence_idle_time_in_liters(self, i, j):
@@ -94,9 +93,11 @@ class DroneExtinguisher:
         Returns:
           int: the amount of time (measured in liters) that we are idle on the day   
         """
-        
-        # TODO
-        raise NotImplementedError()
+
+        idle_time = self.liter_budget_per_day
+        for k in range(i, j+1):
+            idle_time = idle_time - self.travel_costs_in_liters[k] - self.bags[k]
+        return idle_time
 
     def compute_idle_cost(self, i, j, idle_time_in_liters):
         """
@@ -116,9 +117,11 @@ class DroneExtinguisher:
         Returns
           - integer: the cost of being idle on a day corresponding to idle_time_in_liters
         """
-        
-        # TODO
-        raise NotImplementedError()
+        if idle_time_in_liters < 0:
+            return np.inf
+        elif j+1 == self.num_bags:
+            return 0
+        return np.power(idle_time_in_liters, 3)
     
     def compute_sequence_usage_cost(self, i: int, j: int, k: int) -> float:
         """
@@ -132,11 +135,12 @@ class DroneExtinguisher:
         :param k: integer index
 
         Returns
-          - float: the cost of usign drone k for bags[i:j+1] 
+          - float: the cost of using drone k for bags[i:j+1]
         """
-        
-        # TODO
-        raise NotImplementedError()
+        usage_cost = 0
+        for bag_index in range(i, j+1):
+            usage_cost += self.usage_cost[bag_index, k]
+        return usage_cost
 
 
     def dynamic_programming(self):
@@ -146,7 +150,34 @@ class DroneExtinguisher:
         In this function, we fill the memory structures self.idle_cost and self.optimal_cost making use of functions defined above. 
         This function does not return anything. 
         """
+
+        #we want to minimize idle_cost each day
+        #and also minimize usage_cost
+
+        '''
+        Explanation
         
+        We use compute subproblems bottom up and store their solution in self.optimal_cost
+        optimal_cost[i, k] contains the optimal cost of using drones 0 to k to carry bags 0 to i
+        Optimal costs can only become lower once more drones are added (since we do not have to use 
+        the last added drone)
+        Example:
+        drone \ bag || 0 | 1 | 2
+        _______________________
+                0   || 10| 12| 30
+                1   || 10| 12| 24
+        here we see that using drone 0 for bags 0 and 1 and using drone 1 for bag 2 is optimal.
+        Filling in backtracing memory: take rightmost lowest value, search in column for when this value increases
+        last same value is drone used for last bag. Repeat for each bag        
+        '''
+
+        #First assume only 1 drone
+        for j in range(self.num_bags): #loop over bags
+            #compute cost of using drone to carry bags 0 to j
+            #if 0 to j can be carried in a single day: cost = idle_cost + usage_cost
+            #otherwise, cost = previous_cost + (new_idle_cost + usage_cost)
+            # what if it takes three or more days?
+
         # TODO
         raise NotImplementedError()
 
