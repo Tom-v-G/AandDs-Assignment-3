@@ -151,8 +151,25 @@ class DroneExtinguisher:
         This function does not return anything. 
         """
 
-        #we want to minimize idle_cost each day
-        #and also minimize usage_cost
+        #First fill self.idle_cost
+        for j in range(self.num_bags): #iterate over column
+            for i in range(j+1): #iterate over rows
+                self.idle_cost[i][j] = self.compute_idle_cost(i, j , self.compute_sequence_idle_time_in_liters(i,j))
+
+        #zoek in rij self.idle_cost
+        # als [i,j] = np.inf -> neem [i-1,j]
+        current_bag = 0
+        while current_bag != self.num_bags:
+            for i in range(current_bag, self.num_bags):
+                idle_cost = self.idle_cost[current_bag][i]
+                if idle_cost is not np.inf:
+                    lowest_idle_cost = idle_cost
+                else:
+                    current_bag = i
+                    break
+            # lowest_idle_cost -> self.optimal_cost
+            # plus usage_cost
+
 
         '''
         Explanation
@@ -171,15 +188,14 @@ class DroneExtinguisher:
         last same value is drone used for last bag. Repeat for each bag        
         '''
 
+
+
         #First assume only 1 drone
-        for j in range(self.num_bags): #loop over bags
+        #for j in range(self.num_bags): #loop over bags
             #compute cost of using drone to carry bags 0 to j
             #if 0 to j can be carried in a single day: cost = idle_cost + usage_cost
             #otherwise, cost = previous_cost + (new_idle_cost + usage_cost)
             # what if it takes three or more days?
-
-        # TODO
-        raise NotImplementedError()
 
     def lowest_cost(self) -> float:
         """
@@ -212,3 +228,11 @@ class DroneExtinguisher:
         
         # TODO
         raise NotImplementedError()
+
+if __name__ == "__main__":
+    test = DroneExtinguisher(forest_location=(0,0), bags=[10, 30, 1000],
+                               bag_locations=[(2.3,1),(7,2.7), (1,1)], liter_cost_per_km=0.2,
+                               liter_budget_per_day=1000, usage_cost=None)
+    test.fill_travel_costs_in_liters()
+    test.dynamic_programming()
+    print(test.idle_cost)
