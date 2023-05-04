@@ -158,18 +158,23 @@ class DroneExtinguisher:
 
         #zoek in rij self.idle_cost
         # als [i,j] = np.inf -> neem [i-1,j]
+        #vul array np.lowest_idle_cost
         current_bag = 0
         while current_bag != self.num_bags:
             for i in range(current_bag, self.num_bags):
                 idle_cost = self.idle_cost[current_bag][i]
                 if idle_cost is not np.inf:
                     lowest_idle_cost = idle_cost
+                elif i == current_bag: #if single bag breaks liter limit
+                    raise Exception(f'Bag {i+1} exceeds daily load limit')
                 else:
                     current_bag = i
                     break
-            # lowest_idle_cost -> self.optimal_cost
-            # plus usage_cost
+            #lowest_idle_cost }
+            #                   -> self.optimal_cost
+            #usage_cost       }
 
+        #kies uit welke drone via usage_cost
 
         '''
         Explanation
