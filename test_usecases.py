@@ -93,6 +93,11 @@ class TestDroneExtinguisher(unittest.TestCase):
 
 
     def test_dynamic_programming_simple(self):
+
+        # Note: this fails right now because self.optimal_cost has shape (self.num_bags + 1, self.num_drones)
+        # while it should have (self.num_bags, self.num_drones),
+        # as implemented now the last row will remain 0 when calling dynamic_programming
+
         forest_location = (0,0)
         bags = [6,3,8,9]
         bag_locations = [(0,0) for _ in range(len(bags))] # no travel distance
@@ -120,6 +125,7 @@ class TestDroneExtinguisher(unittest.TestCase):
         self.assertEqual(lowest_cost, solution)
 
     def test_dyanmic_programming_one_day(self):
+       # Problem: Usage_cost size does not match amnt of bags
         forest_location = (0,0)
         bags = [10,3,1]
         bag_locations = [(0,0) for _ in range(len(bags))] # no travel distance
@@ -147,6 +153,7 @@ class TestDroneExtinguisher(unittest.TestCase):
         self.assertEqual(lowest_cost, solution)
 
     def test_dyanmic_programming_no_travel_cost(self):
+        # Problem: usage_cost size (4) does not match amount of bags (5)
         forest_location = (0,0)
         bags = [4,10,3,4,20]
         bag_locations = [(0,0) for _ in range(len(bags))] # no travel distance

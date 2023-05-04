@@ -151,30 +151,36 @@ class DroneExtinguisher:
         This function does not return anything. 
         """
 
-        #First fill self.idle_cost
-        for j in range(self.num_bags): #iterate over column
-            for i in range(j+1): #iterate over rows
-                self.idle_cost[i][j] = self.compute_idle_cost(i, j , self.compute_sequence_idle_time_in_liters(i,j))
+        # First fill self.idle_cost
+        for j in range(self.num_bags): # iterate over column
+            for i in range(j+1): # iterate over rows
+                self.idle_cost[i][j] = self.compute_idle_cost(i, j, self.compute_sequence_idle_time_in_liters(i,j))
 
-        #zoek in rij self.idle_cost
-        # als [i,j] = np.inf -> neem [i-1,j]
-        #vul array np.lowest_idle_cost
-        current_bag = 0
-        while current_bag != self.num_bags:
-            for i in range(current_bag, self.num_bags):
-                idle_cost = self.idle_cost[current_bag][i]
-                if idle_cost is not np.inf:
-                    lowest_idle_cost = idle_cost
-                elif i == current_bag: #if single bag breaks liter limit
-                    raise Exception(f'Bag {i+1} exceeds daily load limit')
-                else:
-                    current_bag = i
-                    break
-            #lowest_idle_cost }
-            #                   -> self.optimal_cost
-            #usage_cost       }
+        print('Calculated idle cost for transporting bags i to j: \n', self.idle_cost)
 
-        #kies uit welke drone via usage_cost
+        # if no usage cost is given, set it to 0
+        if self.usage_cost is None:
+            print('No drone usage cost provided, usage cost set to zero.')
+            self.usage_cost = np.zeros(shape=(self.num_bags, self.num_drones))
+
+        # Filling in self.optimal_cost
+        # First single drone scenario:
+        first_bag_of_day = 0 #bagnumber counter
+        optimal_cost_temp_list = []
+
+        for i in range(self.num_bags): # iterate over bags
+            if optimal_cost_temp_list:  # if it is not the first day
+                self.optimal_cost[i, 0] = optimal_cost_temp_list[-1]  # add cost of previous days
+
+            if not np.isinf(self.idle_cost[first_bag_of_day][i]):  # if the cost of transporting the next bag does not exceed daily limit
+                    self.optimal_cost[i, 0] += self.usage_cost[i][0] + self.idle_cost[first_bag_of_day][i]  # change optimal cost
+            else: # new day is needed
+                optimal_cost_temp_list.append(self.optimal_cost[i - 1, 0])  # add optimal cost of last day to list
+                self.optimal_cost[i, 0] = optimal_cost_temp_list[-1] + self.usage_cost[i][0] + self.idle_cost[i][i]  # change optimal cost
+                first_bag_of_day = i  # i-th bag is the first of the next day
+
+
+        print('Calculated optimal cost: \n', self.optimal_cost)
 
         '''
         Explanation
@@ -186,21 +192,14 @@ class DroneExtinguisher:
         Example:
         drone \ bag || 0 | 1 | 2
         _______________________
-                0   || 10| 12| 30
-                1   || 10| 12| 24
+                0   || 70| 12| 30
+                1   || 70| 12| 24
         here we see that using drone 0 for bags 0 and 1 and using drone 1 for bag 2 is optimal.
+        Note that since there is a lot of idle time if only transporting bag 0, the optimal cost of transporting bag 0 and 1 
+        on one day is lower than only transporting bag 0 (70 -> 12). 
         Filling in backtracing memory: take rightmost lowest value, search in column for when this value increases
         last same value is drone used for last bag. Repeat for each bag        
         '''
-
-
-
-        #First assume only 1 drone
-        #for j in range(self.num_bags): #loop over bags
-            #compute cost of using drone to carry bags 0 to j
-            #if 0 to j can be carried in a single day: cost = idle_cost + usage_cost
-            #otherwise, cost = previous_cost + (new_idle_cost + usage_cost)
-            # what if it takes three or more days?
 
     def lowest_cost(self) -> float:
         """
@@ -211,9 +210,9 @@ class DroneExtinguisher:
         Returns:
           - float: the lowest cost
         """
-        
-        # TODO
-        raise NotImplementedError()
+        return self.optimal_cost[-2][-1]
+        #note: as implemented right now self.optimal_cost has shape (self.num_bags + 1, self.num_drones)
+        #should this not be (self.num_bags, self.num_drones) ?
 
 
     def backtrace_solution(self) -> typing.List[int]:
@@ -235,9 +234,9 @@ class DroneExtinguisher:
         raise NotImplementedError()
 
 if __name__ == "__main__":
-    test = DroneExtinguisher(forest_location=(0,0), bags=[10, 30, 1000],
+    test = DroneExtinguisher(forest_location=(0,0), bags=[10, 30, 999],
                                bag_locations=[(2.3,1),(7,2.7), (1,1)], liter_cost_per_km=0.2,
                                liter_budget_per_day=1000, usage_cost=None)
     test.fill_travel_costs_in_liters()
     test.dynamic_programming()
-    print(test.idle_cost)
+    #print(test.idle_cost)
