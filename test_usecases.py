@@ -162,7 +162,7 @@ class TestDroneExtinguisher(unittest.TestCase):
         usage_cost = np.array([[0],
                             [0],
                             [0],
-                            [0]])
+                            [0], [0]])
 
         solution = 2413
 
@@ -190,7 +190,7 @@ class TestDroneExtinguisher(unittest.TestCase):
         usage_cost = np.array([[1],
                              [1],
                              [1],
-                             [1]])
+                             [1], [1]])
 
         solution = 2417
 

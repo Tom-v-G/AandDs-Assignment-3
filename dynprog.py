@@ -164,21 +164,35 @@ class DroneExtinguisher:
             self.usage_cost = np.zeros(shape=(self.num_bags, self.num_drones))
 
         # Filling in self.optimal_cost
+        # Note: optimal_cost starts at 0 bags scenario
         # First single drone scenario:
+        k = 0
+        for i in range(0, self.num_bags+1):  # iterate over amnt of bags
+            temp_optimal_cost_list = []
+            for j in range(0, i):
+                temp_optimal_cost_list.append(self.optimal_cost[j][0] + self.idle_cost[j][i-1] + self.compute_sequence_usage_cost(j, i-1, k))
+                print(f'i: {i}; temp_list: ', temp_optimal_cost_list)
+
+                if temp_optimal_cost_list: #prevent empty list case
+                    self.optimal_cost[i][0] = min(temp_optimal_cost_list)
+
+
+        '''
         first_bag_of_day = 0 #bagnumber counter
         optimal_cost_temp_list = []
-
+        
+        
         for i in range(self.num_bags): # iterate over bags
             if optimal_cost_temp_list:  # if it is not the first day
-                self.optimal_cost[i, 0] = optimal_cost_temp_list[-1]  # add cost of previous days
+                self.optimal_cost[i + 1, 0] = optimal_cost_temp_list[-1]  # add cost of previous days
 
             if not np.isinf(self.idle_cost[first_bag_of_day][i]):  # if the cost of transporting the next bag does not exceed daily limit
-                    self.optimal_cost[i, 0] += self.usage_cost[i][0] + self.idle_cost[first_bag_of_day][i]  # change optimal cost
+                    self.optimal_cost[i + 1, 0] += self.usage_cost[i][0] + self.idle_cost[first_bag_of_day][i]  # change optimal cost
             else: # new day is needed
-                optimal_cost_temp_list.append(self.optimal_cost[i - 1, 0])  # add optimal cost of last day to list
-                self.optimal_cost[i, 0] = optimal_cost_temp_list[-1] + self.usage_cost[i][0] + self.idle_cost[i][i]  # change optimal cost
+                optimal_cost_temp_list.append(self.optimal_cost[i, 0])  # add optimal cost of last day to list
+                self.optimal_cost[i+1, 0] = optimal_cost_temp_list[-1] + self.usage_cost[i][0] + self.idle_cost[i][i]  # change optimal cost
                 first_bag_of_day = i  # i-th bag is the first of the next day
-
+        '''
 
         print('Calculated optimal cost: \n', self.optimal_cost)
 
@@ -210,7 +224,7 @@ class DroneExtinguisher:
         Returns:
           - float: the lowest cost
         """
-        return self.optimal_cost[-2][-1]
+        return self.optimal_cost[-1][-1]
         #note: as implemented right now self.optimal_cost has shape (self.num_bags + 1, self.num_drones)
         #should this not be (self.num_bags, self.num_drones) ?
 
