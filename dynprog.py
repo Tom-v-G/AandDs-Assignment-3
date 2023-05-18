@@ -166,6 +166,7 @@ class DroneExtinguisher:
         # Filling in self.optimal_cost
         # Note: optimal_cost starts at 0 bags scenario
         # First single drone scenario:
+        '''
         k = 0
         for i in range(0, self.num_bags+1):  # iterate over amnt of bags
             temp_optimal_cost_list = []
@@ -173,29 +174,29 @@ class DroneExtinguisher:
                 temp_optimal_cost_list.append(self.optimal_cost[j][0] + self.idle_cost[j][i-1] + self.compute_sequence_usage_cost(j, i-1, k))
                 print(f'i: {i}; temp_list: ', temp_optimal_cost_list)
 
-                if temp_optimal_cost_list: #prevent empty list case
-                    self.optimal_cost[i][0] = min(temp_optimal_cost_list)
-
-
+            if temp_optimal_cost_list: #prevent empty list case
+                self.optimal_cost[i][0] = min(temp_optimal_cost_list)
         '''
-        first_bag_of_day = 0 #bagnumber counter
-        optimal_cost_temp_list = []
-        
-        
-        for i in range(self.num_bags): # iterate over bags
-            if optimal_cost_temp_list:  # if it is not the first day
-                self.optimal_cost[i + 1, 0] = optimal_cost_temp_list[-1]  # add cost of previous days
 
-            if not np.isinf(self.idle_cost[first_bag_of_day][i]):  # if the cost of transporting the next bag does not exceed daily limit
-                    self.optimal_cost[i + 1, 0] += self.usage_cost[i][0] + self.idle_cost[first_bag_of_day][i]  # change optimal cost
-            else: # new day is needed
-                optimal_cost_temp_list.append(self.optimal_cost[i, 0])  # add optimal cost of last day to list
-                self.optimal_cost[i+1, 0] = optimal_cost_temp_list[-1] + self.usage_cost[i][0] + self.idle_cost[i][i]  # change optimal cost
-                first_bag_of_day = i  # i-th bag is the first of the next day
-        '''
+        for k in range(0, self.num_drones):  # iterate over drones
+            for i in range(0, self.num_bags + 1):  # iterate over amnt of bags
+                temp_optimal_cost_list = []
+                for j in range(0, i):
+                    for h in range(0, k+1):
+                        temp_optimal_cost = self.optimal_cost[j][h] + self.idle_cost[j][i - 1]\
+                                            + self.compute_sequence_usage_cost(j, i - 1, h)
+                        temp_optimal_cost_list.append(temp_optimal_cost)
+                        if temp_optimal_cost == min(temp_optimal_cost_list):
+                            first_bag = j
+                            drone_num = h
+
+                if temp_optimal_cost_list:  # prevent empty list case
+                    self.optimal_cost[i][k] = min(temp_optimal_cost_list)
+                    if k == self.num_drones -1:
+                        self.backtrace_memory[(i,k)] = (first_bag, drone_num)
 
         print('Calculated optimal cost: \n', self.optimal_cost)
-
+        print(self.backtrace_memory)
         '''
         Explanation
         
@@ -225,8 +226,6 @@ class DroneExtinguisher:
           - float: the lowest cost
         """
         return self.optimal_cost[-1][-1]
-        #note: as implemented right now self.optimal_cost has shape (self.num_bags + 1, self.num_drones)
-        #should this not be (self.num_bags, self.num_drones) ?
 
 
     def backtrace_solution(self) -> typing.List[int]:
@@ -243,9 +242,16 @@ class DroneExtinguisher:
             
         :return: A tuple (leftmost indices, drone list) as described above
         """
-        
-        # TODO
-        raise NotImplementedError()
+
+        leftmost_indices = [0]
+        drone_list = []
+        temp = 0
+        for entry in self.backtrace_memory.items():
+            if entry[1][0] != temp:
+                leftmost_indices.append(entry[1][0])
+                temp = entry[1][0]
+            drone_list.append(entry[1][1])
+        return (leftmost_indices, drone_list)
 
 if __name__ == "__main__":
     test = DroneExtinguisher(forest_location=(0,0), bags=[10, 30, 999],
