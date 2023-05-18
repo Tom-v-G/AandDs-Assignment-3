@@ -183,17 +183,18 @@ class DroneExtinguisher:
                 temp_optimal_cost_list = []
                 for j in range(0, i):
                     for h in range(0, k+1):
-                        temp_optimal_cost = self.optimal_cost[j][h] + self.idle_cost[j][i - 1]\
-                                            + self.compute_sequence_usage_cost(j, i - 1, h)
-                        temp_optimal_cost_list.append(temp_optimal_cost)
-                        if temp_optimal_cost == min(temp_optimal_cost_list):
-                            first_bag = j
-                            drone_num = h
+                        for l in range(h, k+1):
+                            temp_optimal_cost = self.optimal_cost[j][h] + self.idle_cost[j][i - 1]\
+                                                + self.compute_sequence_usage_cost(j, i - 1, l)
+                            temp_optimal_cost_list.append(temp_optimal_cost)
+                            if temp_optimal_cost == min(temp_optimal_cost_list):
+                                first_bag = j
+                                drone_num = l
 
                 if temp_optimal_cost_list:  # prevent empty list case
                     self.optimal_cost[i][k] = min(temp_optimal_cost_list)
-                    if k == self.num_drones -1:
-                        self.backtrace_memory[(i,k)] = (first_bag, drone_num)
+                    if k == self.num_drones - 1:
+                        self.backtrace_memory[(i, k)] = (first_bag, drone_num)
 
         print('Calculated optimal cost: \n', self.optimal_cost)
         print(self.backtrace_memory)

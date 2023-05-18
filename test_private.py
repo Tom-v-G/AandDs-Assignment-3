@@ -7,7 +7,7 @@ class MyTestCase(unittest.TestCase):
         forest_location = (0, 0)
         bags = [3, 9, 2, 3, 19]
         bag_locations = [(3, 4) for _ in range(len(bags))]  # constant travel distance 5
-        liter_cost_per_km = 0.1  # now there is a constant cost of 1 liter traveling time per bag
+        liter_cost_per_km = 0.1
         liter_budget_per_day = 20
         usage_cost = np.array([[1, 1, 0],
                                [1, 1, 0],
@@ -31,19 +31,19 @@ class MyTestCase(unittest.TestCase):
         lowest_cost = de.lowest_cost()
         self.assertEqual(lowest_cost, solution)
 
-    def test_backtrace_memory(self):
+    def test_backtrace_memory_simple(self):
         forest_location = (0, 0)
         bags = [3, 9, 2, 3, 19]
         bag_locations = [(3, 4) for _ in range(len(bags))]  # constant travel distance 5
-        liter_cost_per_km = 0.1  # now there is a constant cost of 1 liter traveling time per bag
+        liter_cost_per_km = 0.1
         liter_budget_per_day = 20
         usage_cost = np.array([[0, 1, 1],
                                [0, 1, 1],
-                               [1, 1, 0],
+                               [1, 0, 1],
                                [1, 1, 0],
                                [1, 1, 0]])
 
-        solution = 2413
+        solution = ([0, 2, 4], [0, 0, 1, 2, 2])
 
         de = DroneExtinguisher(
             forest_location=forest_location,
@@ -56,7 +56,7 @@ class MyTestCase(unittest.TestCase):
 
         de.fill_travel_costs_in_liters()
         de.dynamic_programming()
-        self.assertEqual( ([0, 2, 4], [0, 0, 2, 2, 2]), de.backtrace_solution())
+        self.assertEqual(solution, de.backtrace_solution())
 
 
 if __name__ == '__main__':
