@@ -227,7 +227,7 @@ class DroneExtinguisher:
             drone_list[i] = reverse_mem[0][1]  # set drone numbers to correct value
         reverse_mem.pop(0)
 
-        while reverse_mem[0] != (0, 0):  # loop through reversed memory
+        while reverse_mem[0][0] != 0:  # loop through reversed memory until first day
             # check if drone number is smaller or equal and if the first moved bag is different (signaling a new day)
             if reverse_mem[0][1] <= drone_list[temp[0]] and reverse_mem[0][0] < leftmost_indices_rev[-1]:
                 leftmost_indices_rev.append(reverse_mem[0][0])
@@ -237,6 +237,11 @@ class DroneExtinguisher:
             temp = reverse_mem[0]
             reverse_mem.pop(0)
 
-        leftmost_indices_rev.append(0)  # first bag on day 1 is always bag 0
+        # update drone used on the first day
+        for i in range(0, temp[0]):
+            drone_list[i] = reverse_mem[0][1]
+
+        # first bag on day 1 is always bag 0
+        leftmost_indices_rev.append(0)
 
         return (list(reversed(leftmost_indices_rev)), drone_list)

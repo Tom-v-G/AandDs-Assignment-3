@@ -77,9 +77,6 @@ class MyTestCase(unittest.TestCase):
         de.fill_travel_costs_in_liters()
         de.dynamic_programming()
         lowest_cost = de.lowest_cost()
-        print(de.optimal_cost)
-        print(de.backtrace_memory)
-        print(de.backtrace_solution())
         self.assertEqual(lowest_cost, solution)
 
 if __name__ == '__main__':
