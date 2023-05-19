@@ -188,7 +188,7 @@ class DroneExtinguisher:
                             temp_optimal_cost = self.optimal_cost[j][h] + self.idle_cost[j][i-1]\
                                                 + self.compute_sequence_usage_cost(j, i-1, l)
                             temp_optimal_cost_list.append(temp_optimal_cost)
-                            if temp_optimal_cost < memory_value:
+                            if temp_optimal_cost < memory_value: #keep track of solution
                                 memory_value = temp_optimal_cost
                                 first_bag = j
                                 drone_num = l
@@ -196,7 +196,7 @@ class DroneExtinguisher:
                 if temp_optimal_cost_list:  # prevent empty list case
                     self.optimal_cost[i][k] = min(temp_optimal_cost_list)
                     if k == self.num_drones - 1:
-                        self.backtrace_memory[(i, k)] = (first_bag, drone_num)
+                        self.backtrace_memory[(i, k)] = (first_bag, drone_num) #add solution to backtracing memory
 
         print('Calculated optimal cost: \n', self.optimal_cost)
         print(self.backtrace_memory)
@@ -245,40 +245,16 @@ class DroneExtinguisher:
             
         :return: A tuple (leftmost indices, drone list) as described above
         """
-        leftmost_indices = []
-        drone_list = []
-
-        temp = self.lowest_cost()
-
-        bag_idx = self.num_bags
-        while bag_idx > 0:
-            # Drone list
-            drone_idx = self.num_drones - 1
-
-            while drone_idx > 0:
-                if temp < self.optimal_cost[bag_idx][drone_idx-1]:
-                    print(bag_idx, drone_idx)
-                    break
-                drone_idx = drone_idx - 1
-            drone_list.insert(0, drone_idx)
-
-            # first bag of day check
-            if self.optimal_cost[bag_idx - 1][-1] <= temp: # if earlier day
-                leftmost_indices.insert(0, bag_idx - 1)
-            bag_idx = bag_idx - 1
-            temp = self.optimal_cost[bag_idx][-1]
-            print(temp)
-
-        '''
         leftmost_indices = [0]
-        drone_list = []
+        drone_list = [0 for _ in range(self.num_bags)]
         temp = 0
-        for entry in self.backtrace_memory.items():
-            if entry[1][0] != temp:
-                leftmost_indices.append(entry[1][0])
-                temp = entry[1][0]
-            drone_list.append(entry[1][1])
-        '''
+        for index, entry in enumerate(list(self.backtrace_memory.values())):
+            if entry[0] != temp:
+                leftmost_indices.append(entry[0])
+                temp = entry[0]
+                for i in range(entry[0], index+1):
+                    drone_list[i] = entry[1]
+
         return (leftmost_indices, drone_list)
 
 if __name__ == "__main__":
