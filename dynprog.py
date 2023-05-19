@@ -215,25 +215,28 @@ class DroneExtinguisher:
             
         :return: A tuple (leftmost indices, drone list) as described above
         """
-
+        #reverse the backtrace memory so the last entry is first
         reverse_mem = list(reversed(list(self.backtrace_memory.values())))  # .reverse() does not work on dict.values
-        leftmost_indices_rev = []
+        leftmost_indices_rev = [] #keeps track of first bag transported on a day (in reverse)
         drone_list = [0 for _ in range(self.num_bags)]
 
+        #initialisation
         temp = reverse_mem[0]
         leftmost_indices_rev.append(reverse_mem[0][0])
         for i in range(reverse_mem[0][0], self.num_bags):
-            drone_list[i] = reverse_mem[0][1]
+            drone_list[i] = reverse_mem[0][1]  # set drone numbers to correct value
         reverse_mem.pop(0)
 
-        while reverse_mem[0] != (0, 0):
-            if reverse_mem[0][1] <= drone_list[temp[0]]:
+        while reverse_mem[0] != (0, 0):  # loop through reversed memory
+            # check if drone number is smaller or equal and if the first moved bag is different (signaling a new day)
+            if reverse_mem[0][1] <= drone_list[temp[0]] and reverse_mem[0][0] < leftmost_indices_rev[-1]:
                 leftmost_indices_rev.append(reverse_mem[0][0])
+                # update drone numbers for bags that were moved on that day
                 for i in range(reverse_mem[0][0], temp[0]):
                     drone_list[i] = reverse_mem[0][1]
             temp = reverse_mem[0]
             reverse_mem.pop(0)
 
-        leftmost_indices_rev.append(0)
+        leftmost_indices_rev.append(0)  # first bag on day 1 is always bag 0
 
         return (list(reversed(leftmost_indices_rev)), drone_list)
