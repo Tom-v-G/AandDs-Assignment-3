@@ -161,7 +161,6 @@ class DroneExtinguisher:
 
         # if no usage cost is given, set it to 0
         if self.usage_cost is None:
-            print('No drone usage cost provided, usage cost set to zero.')
             self.usage_cost = np.zeros(shape=(self.num_bags, self.num_drones))
 
         # Filling in self.optimal_cost
