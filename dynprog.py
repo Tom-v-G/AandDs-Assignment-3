@@ -59,8 +59,8 @@ class DroneExtinguisher:
         Returns 
           float: the Euclidean distance between the two points
         """
-        
-        return np.sqrt( np.power(point1[0] - point2[0], 2) + np.power(point1[1] - point2[1], 2))
+
+        return np.sqrt(np.power(point1[0] - point2[0], 2) + np.power(point1[1] - point2[1], 2))
 
 
     def fill_travel_costs_in_liters(self):
@@ -72,10 +72,10 @@ class DroneExtinguisher:
                 
         The function does not return anything.  
         """
+
         for index in range(self.num_bags):
             distance = self.compute_euclidean_distance(self.bag_locations[index], self.forest_location)
             self.travel_costs_in_liters.append(np.ceil(2 * distance * self.liter_cost_per_km))
-
 
     def compute_sequence_idle_time_in_liters(self, i, j):
         """
@@ -94,6 +94,7 @@ class DroneExtinguisher:
           int: the amount of time (measured in liters) that we are idle on the day   
         """
 
+        #substract travel cost and water volume contents from the daily liter budget for each carried bag
         idle_time = self.liter_budget_per_day
         for k in range(i, j+1):
             idle_time = idle_time - self.travel_costs_in_liters[k] - self.bags[k]
@@ -117,9 +118,9 @@ class DroneExtinguisher:
         Returns
           - integer: the cost of being idle on a day corresponding to idle_time_in_liters
         """
-        if idle_time_in_liters < 0:
+        if idle_time_in_liters < 0: #went over daily budget
             return np.inf
-        elif j+1 == self.num_bags:
+        elif j+1 == self.num_bags: #if the last bag is emptied the idle time is 0
             return 0
         return np.power(idle_time_in_liters, 3)
     
@@ -137,6 +138,8 @@ class DroneExtinguisher:
         Returns
           - float: the cost of using drone k for bags[i:j+1]
         """
+
+        #add usage cost of each carried bag to the total
         usage_cost = 0
         for bag_index in range(i, j+1):
             usage_cost += self.usage_cost[bag_index, k]
@@ -156,39 +159,26 @@ class DroneExtinguisher:
             for i in range(j+1):  # iterate over rows
                 self.idle_cost[i][j] = self.compute_idle_cost(i, j, self.compute_sequence_idle_time_in_liters(i, j))
 
-        #print('Calculated idle cost for transporting bags i to j: \n', self.idle_cost)
-
         # if no usage cost is given, set it to 0
         if self.usage_cost is None:
             print('No drone usage cost provided, usage cost set to zero.')
             self.usage_cost = np.zeros(shape=(self.num_bags, self.num_drones))
 
         # Filling in self.optimal_cost
-        # Note: optimal_cost starts at 0 bags scenario
-        # First single drone scenario:
-        '''
-        k = 0
-        for i in range(0, self.num_bags+1):  # iterate over amnt of bags
-            temp_optimal_cost_list = []
-            for j in range(0, i):
-                temp_optimal_cost_list.append(self.optimal_cost[j][0] + self.idle_cost[j][i-1] + self.compute_sequence_usage_cost(j, i-1, k))
-                print(f'i: {i}; temp_list: ', temp_optimal_cost_list)
-
-            if temp_optimal_cost_list: #prevent empty list case
-                self.optimal_cost[i][0] = min(temp_optimal_cost_list)
-        '''
-
+        # based on the recurrence relation discussed in the report
         for k in range(0, self.num_drones):  # iterate over drones
             for i in range(0, self.num_bags + 1):  # iterate over bags 0 to n (first row of optimal_cost is always 0)
-                temp_optimal_cost_list = []
-                memory_value = np.inf
-                for j in range(0, i): #search solutions from carrying no bags to carrying bags :i
-                    for h in range(0, k+1): #search drones 0 to k
+                temp_optimal_cost_list = [] #stores temporary solutions
+                memory_value = np.inf # for filling in backtracing memory
+                for j in range(0, i): # determines which bags are carried the last day
+                    for h in range(0, k+1): #determines which drones were used the previous day
                         for l in range(h, k+1): #only drones with index h or higher are allowed for new transport
+                            #Recurrence relation
                             temp_optimal_cost = self.optimal_cost[j][h] + self.idle_cost[j][i-1]\
                                                 + self.compute_sequence_usage_cost(j, i-1, l)
                             temp_optimal_cost_list.append(temp_optimal_cost)
-                            if temp_optimal_cost < memory_value: #keep track of solution
+                            # keep track of optimal transport solution
+                            if temp_optimal_cost < memory_value:
                                 memory_value = temp_optimal_cost
                                 first_bag = j
                                 drone_num = l
@@ -197,27 +187,6 @@ class DroneExtinguisher:
                     self.optimal_cost[i][k] = min(temp_optimal_cost_list)
                     if k == self.num_drones - 1:
                         self.backtrace_memory[(i, k)] = (first_bag, drone_num) #add solution to backtracing memory
-
-        print('Calculated optimal cost: \n', self.optimal_cost)
-        print(self.backtrace_memory)
-        '''
-        Explanation
-        
-        We use compute subproblems bottom up and store their solution in self.optimal_cost
-        optimal_cost[i, k] contains the optimal cost of using drones 0 to k to carry bags 0 to i
-        Optimal costs can only become lower once more drones are added (since we do not have to use 
-        the last added drone)
-        Example:
-        drone \ bag || 0 | 1 | 2
-        _______________________
-                0   || 70| 12| 30
-                1   || 70| 12| 24
-        here we see that using drone 0 for bags 0 and 1 and using drone 1 for bag 2 is optimal.
-        Note that since there is a lot of idle time if only transporting bag 0, the optimal cost of transporting bag 0 and 1 
-        on one day is lower than only transporting bag 0 (70 -> 12). 
-        Filling in backtracing memory: take rightmost lowest value, search in column for when this value increases
-        last same value is drone used for last bag. Repeat for each bag        
-        '''
 
     def lowest_cost(self) -> float:
         """
@@ -228,6 +197,7 @@ class DroneExtinguisher:
         Returns:
           - float: the lowest cost
         """
+        #the lowest cost is simply the bottom right entry in self.optimal_cost
         return self.optimal_cost[-1][-1]
 
 
@@ -245,22 +215,25 @@ class DroneExtinguisher:
             
         :return: A tuple (leftmost indices, drone list) as described above
         """
-        leftmost_indices = [0]
+
+        reverse_mem = list(reversed(list(self.backtrace_memory.values())))  # .reverse() does not work on dict.values
+        leftmost_indices_rev = []
         drone_list = [0 for _ in range(self.num_bags)]
-        temp = 0
-        for index, entry in enumerate(list(self.backtrace_memory.values())):
-            if entry[0] != temp:
-                leftmost_indices.append(entry[0])
-                temp = entry[0]
-                for i in range(entry[0], index+1):
-                    drone_list[i] = entry[1]
 
-        return (leftmost_indices, drone_list)
+        temp = reverse_mem[0]
+        leftmost_indices_rev.append(reverse_mem[0][0])
+        for i in range(reverse_mem[0][0], self.num_bags):
+            drone_list[i] = reverse_mem[0][1]
+        reverse_mem.pop(0)
 
-if __name__ == "__main__":
-    test = DroneExtinguisher(forest_location=(0,0), bags=[10, 30, 999],
-                               bag_locations=[(2.3,1),(7,2.7), (1,1)], liter_cost_per_km=0.2,
-                               liter_budget_per_day=1000, usage_cost=None)
-    test.fill_travel_costs_in_liters()
-    test.dynamic_programming()
-    #print(test.idle_cost)
+        while reverse_mem[0] != (0, 0):
+            if reverse_mem[0][1] <= drone_list[temp[0]]:
+                leftmost_indices_rev.append(reverse_mem[0][0])
+                for i in range(reverse_mem[0][0], temp[0]):
+                    drone_list[i] = reverse_mem[0][1]
+            temp = reverse_mem[0]
+            reverse_mem.pop(0)
+
+        leftmost_indices_rev.append(0)
+
+        return (list(reversed(leftmost_indices_rev)), drone_list)
