@@ -152,11 +152,11 @@ class DroneExtinguisher:
         """
 
         # First fill self.idle_cost
-        for j in range(self.num_bags): # iterate over column
-            for i in range(j+1): # iterate over rows
-                self.idle_cost[i][j] = self.compute_idle_cost(i, j, self.compute_sequence_idle_time_in_liters(i,j))
+        for j in range(self.num_bags):  # iterate over column
+            for i in range(j+1):  # iterate over rows
+                self.idle_cost[i][j] = self.compute_idle_cost(i, j, self.compute_sequence_idle_time_in_liters(i, j))
 
-        print('Calculated idle cost for transporting bags i to j: \n', self.idle_cost)
+        #print('Calculated idle cost for transporting bags i to j: \n', self.idle_cost)
 
         # if no usage cost is given, set it to 0
         if self.usage_cost is None:
@@ -179,15 +179,17 @@ class DroneExtinguisher:
         '''
 
         for k in range(0, self.num_drones):  # iterate over drones
-            for i in range(0, self.num_bags + 1):  # iterate over amnt of bags
+            for i in range(0, self.num_bags + 1):  # iterate over bags 0 to n (first row of optimal_cost is always 0)
                 temp_optimal_cost_list = []
-                for j in range(0, i):
-                    for h in range(0, k+1):
-                        for l in range(h, k+1):
-                            temp_optimal_cost = self.optimal_cost[j][h] + self.idle_cost[j][i - 1]\
-                                                + self.compute_sequence_usage_cost(j, i - 1, l)
+                memory_value = np.inf
+                for j in range(0, i): #search solutions from carrying no bags to carrying bags :i
+                    for h in range(0, k+1): #search drones 0 to k
+                        for l in range(h, k+1): #only drones with index h or higher are allowed for new transport
+                            temp_optimal_cost = self.optimal_cost[j][h] + self.idle_cost[j][i-1]\
+                                                + self.compute_sequence_usage_cost(j, i-1, l)
                             temp_optimal_cost_list.append(temp_optimal_cost)
-                            if temp_optimal_cost == min(temp_optimal_cost_list):
+                            if temp_optimal_cost < memory_value:
+                                memory_value = temp_optimal_cost
                                 first_bag = j
                                 drone_num = l
 
@@ -243,7 +245,31 @@ class DroneExtinguisher:
             
         :return: A tuple (leftmost indices, drone list) as described above
         """
+        leftmost_indices = []
+        drone_list = []
 
+        temp = self.lowest_cost()
+
+        bag_idx = self.num_bags
+        while bag_idx > 0:
+            # Drone list
+            drone_idx = self.num_drones - 1
+
+            while drone_idx > 0:
+                if temp < self.optimal_cost[bag_idx][drone_idx-1]:
+                    print(bag_idx, drone_idx)
+                    break
+                drone_idx = drone_idx - 1
+            drone_list.insert(0, drone_idx)
+
+            # first bag of day check
+            if self.optimal_cost[bag_idx - 1][-1] <= temp: # if earlier day
+                leftmost_indices.insert(0, bag_idx - 1)
+            bag_idx = bag_idx - 1
+            temp = self.optimal_cost[bag_idx][-1]
+            print(temp)
+
+        '''
         leftmost_indices = [0]
         drone_list = []
         temp = 0
@@ -252,6 +278,7 @@ class DroneExtinguisher:
                 leftmost_indices.append(entry[1][0])
                 temp = entry[1][0]
             drone_list.append(entry[1][1])
+        '''
         return (leftmost_indices, drone_list)
 
 if __name__ == "__main__":

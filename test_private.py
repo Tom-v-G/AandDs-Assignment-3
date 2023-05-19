@@ -40,10 +40,10 @@ class MyTestCase(unittest.TestCase):
         usage_cost = np.array([[0, 1, 1],
                                [0, 1, 1],
                                [1, 0, 1],
-                               [1, 1, 0],
+                               [1, 0, 1],
                                [1, 1, 0]])
 
-        solution = ([0, 2, 4], [0, 0, 1, 2, 2])
+        solution = ([0, 2, 4], [0, 0, 1, 1, 2])
 
         de = DroneExtinguisher(
             forest_location=forest_location,
